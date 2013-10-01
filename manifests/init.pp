@@ -1,42 +1,48 @@
+# == Class: jenkins
 #
-# Class: jenkins
+# === Parameters
 #
-# Installs the Jenkins CI server, http://jenkins-ci.org/.
+# === Variables
 #
-# Usage:
+# === Examples
 #
-#   # Install and run jenkins.
-#   include jenkins
+# === Authors
 #
-class jenkins {
+# Jeremy T. Bouse <Jeremy.Bouse@UnderGrid.net>
+# Original fork: https://github.com/rdegges/puppet-jenkins
+#
+# === Copyright
+#
+# Copyright 2013 UnderGrid Network Services, unless otherwise noted.
+#
+class jenkins (
+  $ensure = present
+) {
 
-    $key_url = "http://pkg.jenkins-ci.org/debian/jenkins-ci.org.key"
-    $repo_url = "deb http://pkg.jenkins-ci.org/debian binary/"
-    $apt_sources = "/etc/apt/sources.list"
+  if !defined(Class['jenkins::repo']) {
+    class { 'jenkins::repo': ensure => $ensure }
+  }
 
-    exec { "install jenkins key":
-        command     => "wget -q -O - ${key_url} | apt-key add -; echo '${repo_url}' >> ${apt_sources}",
-        onlyif      => "grep -Fvxq '${repo_url}' ${apt_sources}",
-        path        => ["/bin", "/usr/bin"],
+  package { 'jenkins':
+    ensure      => $ensure,
+  }
+
+  case $ensure {
+    absent: {
+      $enable_real = false
+      $ensure_real = stopped
     }
-
-    exec { "jenkins-apt-update":
-        command => "/usr/bin/aptitude -y update",
-        require => Exec["install jenkins key"],
+    default: {
+      $enable_real = true
+      $ensure_real = running
     }
+  }
 
-    package { "jenkins":
-        ensure      => present,
-        provider    => "aptitude",
-        require     => Exec["jenkins-apt-update"],
-    }
-
-    service { "jenkins":
-        enable      => true,
-        ensure      => running,
-        hasrestart  => true,
-        hasstatus   => true,
-        require     => Package["jenkins"],
-    }
-
+  service { 'jenkins':
+    ensure      => $ensure_real,
+    enable      => $enable_real,
+    hasrestart  => true,
+    hasstatus   => true,
+    require     => Package['jenkins'],
+  }
 }
