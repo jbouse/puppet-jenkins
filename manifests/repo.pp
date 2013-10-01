@@ -20,8 +20,10 @@ class jenkins::repo (
   case $::osfamily {
     'Debian': {
       Apt::Source {
-        location => 'http://pkg.jenkins-ci.org/debian',
-        key_source => 'http://pkg.jenkins-ci.org/debian/jenkins-ci.org.key',
+        location    => 'http://pkg.jenkins-ci.org/debian',
+        include_src => false,
+        key         => 'D50582E6',
+        key_source  => 'http://pkg.jenkins-ci.org/debian/jenkins-ci.org.key',
       }
       apt::source { 'jenkins-ci.org':
         ensure  => $ensure,
